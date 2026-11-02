@@ -26,6 +26,8 @@ def test_no_color_when_not_a_tty(monkeypatch):
     assert color.green("abc") == "abc"
     assert color.cyan("abc") == "abc"
     assert color.bold("abc") == "abc"
+    assert color.bg_red("abc") == "abc"
+    assert color.bg_green("abc") == "abc"
 
 
 # ── color off: NO_COLOR env var ───────────────────────────────────────────────
@@ -37,6 +39,8 @@ def test_no_color_env_var_suppresses_color(monkeypatch):
     monkeypatch.setenv("NO_COLOR", "")
     monkeypatch.setattr("sys.stdout", _FakeTTY())
     assert color.yellow("sha1234") == "sha1234"
+    assert color.bg_red("file.txt") == "file.txt"
+    assert color.bg_green("file.txt") == "file.txt"
 
 
 # ── color off: --no-color flag ────────────────────────────────────────────────
@@ -48,6 +52,8 @@ def test_no_color_flag_suppresses_color(monkeypatch):
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setattr("sys.stdout", _FakeTTY())
     assert color.yellow("sha1234") == "sha1234"
+    assert color.bg_red("file.txt") == "file.txt"
+    assert color.bg_green("file.txt") == "file.txt"
 
 
 # ── color on: real TTY, no overrides ─────────────────────────────────────────
@@ -63,6 +69,8 @@ def test_color_on_when_tty(monkeypatch):
     assert color.green("x") == "\033[32mx\033[0m"
     assert color.cyan("x") == "\033[36mx\033[0m"
     assert color.bold("x") == "\033[1mx\033[0m"
+    assert color.bg_red("x") == "\033[41mx\033[0m"
+    assert color.bg_green("x") == "\033[42mx\033[0m"
 
 
 # ── priority: --no-color beats TTY ───────────────────────────────────────────
@@ -74,6 +82,8 @@ def test_no_color_flag_beats_tty(monkeypatch):
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setattr("sys.stdout", _FakeTTY())
     assert color.green("ok") == "ok"
+    assert color.bg_red("ok") == "ok"
+    assert color.bg_green("ok") == "ok"
 
 
 # ── helper: fake TTY object ───────────────────────────────────────────────────
