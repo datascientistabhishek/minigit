@@ -80,3 +80,13 @@ def cyan(text: str) -> str:
 def bold(text: str) -> str:
     """Wrap *text* in bold ANSI codes."""
     return _ansi(1, text)
+
+
+def bg_red(text: str) -> str:
+    """Wrap *text* in red background ANSI codes."""
+    return _ansi(41, text)
+
+
+def bg_green(text: str) -> str:
+    """Wrap *text* in green background ANSI codes."""
+    return _ansi(42, text)

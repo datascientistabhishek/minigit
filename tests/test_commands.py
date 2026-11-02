@@ -289,6 +289,84 @@ def test_add_binary_file(repo, run, write):
     assert run("cat-file", "-s", sha).out == "256\n"
 
 
+def test_add_confirmation_new_file(repo, run, write):
+    write("hello.txt", "hello\n")
+    result = run("add", "hello.txt")
+    assert result.code == 0
+    assert result.out == "staged: hello.txt (new file)\n"
+
+
+def test_add_confirmation_modified(repo, run, write):
+    write("hello.txt", "hello\n")
+    run("add", "hello.txt")
+    run("commit", "-m", "first")
+
+    write("hello.txt", "modified content\n")
+    result = run("add", "hello.txt")
+    assert result.code == 0
+    assert result.out == "staged: hello.txt (modified)\n"
+
+
+def test_add_confirmation_deleted(repo, run, write):
+    write("hello.txt", "hello\n")
+    run("add", "hello.txt")
+    run("commit", "-m", "first")
+
+    (repo.worktree / "hello.txt").unlink()
+    result = run("add", "hello.txt")
+    assert result.code == 0
+    assert result.out == "staged: hello.txt (deleted)\n"
+
+
+def test_add_confirmation_dot_multiple_files(repo, run, write):
+    write("b_mod.txt", "b original\n")
+    write("c_del.txt", "c original\n")
+    run("add", ".")
+    run("commit", "-m", "initial")
+
+    write("a_new.txt", "a new\n")
+    write("b_mod.txt", "b changed\n")
+    (repo.worktree / "c_del.txt").unlink()
+
+    result = run("add", ".")
+    assert result.code == 0
+    assert result.out == (
+        "staged: a_new.txt (new file)\n"
+        "staged: b_mod.txt (modified)\n"
+        "staged: c_del.txt (deleted)\n"
+    )
+
+
+def test_add_confirmation_failure_no_output(repo, run):
+    result = run("add", "nonexistent.txt")
+    assert result.code == 128
+    assert "did not match any files" in result.err
+    assert result.out == ""
+
+
+def test_add_unchanged_file_after_commit_not_reported_as_modified(repo, run, write):
+    write("newfile.txt", "content\n")
+    assert run("add", "newfile.txt").out == "staged: newfile.txt (new file)\n"
+    run("commit", "-m", "Test new features")
+
+    result = run("add", "newfile.txt")
+    assert result.code == 0
+    assert "modified" not in result.out
+    assert result.out == ""
+    assert "nothing to commit, working tree clean" in run("status").out
+
+
+def test_add_dot_unchanged_files_after_commit(repo, run, write):
+    write("f1.txt", "1\n")
+    write("f2.txt", "2\n")
+    run("add", ".")
+    run("commit", "-m", "first")
+
+    result = run("add", ".")
+    assert result.code == 0
+    assert result.out == ""
+
+
 # -- commit -------------------------------------------------------------------
 
 

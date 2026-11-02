@@ -53,3 +53,47 @@ def test_detached_head(repo, run, write):
     commit = head_commit(repo)
     set_head(repo, commit, symbolic=False)
     assert run("status").out.startswith(f"HEAD detached at {commit[:7]}")
+
+
+def test_status_background_colors_when_tty(repo, run, write, monkeypatch):
+    """Untracked files get red background, tracked files get green background."""
+    write("tracked_committed.txt", "initial\n")
+    run("add", "tracked_committed.txt")
+    run("commit", "-m", "first")
+
+    write("tracked_staged.txt", "new staged\n")
+    run("add", "tracked_staged.txt")
+
+    write("tracked_committed.txt", "modified content\n")
+    write("untracked.txt", "untracked\n")
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+
+    out = run("status").out
+
+    # Tracked files (staged and unstaged) have green background (\033[42m...\033[0m)
+    assert "\tnew file:   \033[42mtracked_staged.txt\033[0m" in out
+    assert "\tmodified:   \033[42mtracked_committed.txt\033[0m" in out
+
+    # Untracked files have red background (\033[41m...\033[0m)
+    assert "\t\033[41muntracked.txt\033[0m" in out
+
+    # Background color is applied ONLY to the path, not the label prefix or entire line
+    assert "\033[42m\tnew file:" not in out
+    assert "\033[41m\t" not in out
+
+
+def test_status_no_color_flag_suppresses_background_color(repo, run, write, monkeypatch):
+    write("tracked.txt", "hello\n")
+    run("add", "tracked.txt")
+    write("untracked.txt", "untracked\n")
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+
+    out = run("--no-color", "status").out
+    assert "\033[41m" not in out
+    assert "\033[42m" not in out
+    assert "\tnew file:   tracked.txt" in out
+    assert "\tuntracked.txt" in out
