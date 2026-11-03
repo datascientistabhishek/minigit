@@ -237,9 +237,19 @@ def test_cat_file_unknown(repo, run):
 
 def test_add_file(repo, run, write):
     write("hello.txt", "hello\n")
-    assert run("add", "hello.txt").code == 0
+    result = run("add", "hello.txt")
+    assert result.code == 0
+    assert result.out == "staged hello.txt\n"
     entry = Index.load(repo).get("hello.txt")
     assert entry.sha == HELLO_BLOB
+
+
+def test_add_multiple_files_prints_each(repo, run, write):
+    write("x.txt", "x\n")
+    write("y.txt", "y\n")
+    result = run("add", "x.txt", "y.txt")
+    assert result.code == 0
+    assert result.out == "staged x.txt\nstaged y.txt\n"
 
 
 def test_add_directory_recursively(repo, run, write):
@@ -257,7 +267,9 @@ def test_add_stages_deletion_of_removed_file(repo, run, write):
     write("keep.txt", "keep\n")
     run("add", ".")
     (repo.worktree / "hello.txt").unlink()
-    assert run("add", ".").code == 0
+    result = run("add", ".")
+    assert result.code == 0
+    assert "staged hello.txt\n" in result.out
     assert [e.path for e in Index.load(repo)] == ["keep.txt"]
 
 
