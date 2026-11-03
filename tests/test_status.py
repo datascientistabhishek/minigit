@@ -53,3 +53,24 @@ def test_detached_head(repo, run, write):
     commit = head_commit(repo)
     set_head(repo, commit, symbolic=False)
     assert run("status").out.startswith(f"HEAD detached at {commit[:7]}")
+
+
+def test_untracked_files_colored_red_when_tty(repo, run, write, monkeypatch):
+    import sys
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    write("scratch.py", "print(1)\n")
+    out = run("status").out
+    assert "\t\033[31mscratch.py\033[0m" in out
+
+
+def test_staged_files_colored_green_when_tty(repo, run, write, monkeypatch):
+    import sys
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    write("notes.txt", "content\n")
+    run("add", "notes.txt")
+    out = run("status").out
+    assert "\t\033[32mnew file:   notes.txt\033[0m" in out
