@@ -235,6 +235,20 @@ def test_cat_file_unknown(repo, run):
 # -- add ----------------------------------------------------------------------
 
 
+def test_add_no_paths_prints_message(repo, run):
+    result = run("add")
+    assert result.code == 0
+    assert "Nothing specified, nothing added." in result.err
+    assert "hint: Maybe you wanted to say 'git add .'?" in result.err
+
+
+def test_add_verbose(repo, run, write):
+    write("hello.txt", "hello\n")
+    result = run("add", "-v", "hello.txt")
+    assert result.code == 0
+    assert result.out == "add 'hello.txt'\n"
+
+
 def test_add_file(repo, run, write):
     write("hello.txt", "hello\n")
     assert run("add", "hello.txt").code == 0
