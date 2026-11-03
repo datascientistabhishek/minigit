@@ -31,6 +31,7 @@ def run(args: argparse.Namespace, repo: Repository | None) -> int:
         for path in _expand(repo, raw):
             sha = write_object(repo, (repo.worktree / path).read_bytes(), "blob")
             index.add(IndexEntry(FILE_MODE, sha, path))
+            print(f"staged {path}")
     index.save(repo)
     return 0
 
@@ -49,6 +50,7 @@ def _stage_deletions(index, repo, raw):
     ]
     for path in deleted:
         index.remove(path)
+        print(f"staged {path}")
     if not deleted and not Path(raw).exists():
         raise MinigitError(f"pathspec '{raw}' did not match any files")
 
