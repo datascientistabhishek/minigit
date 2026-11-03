@@ -5,6 +5,7 @@ For each file, ``add`` stores its content as a blob object and records
 """
 
 import argparse
+import sys
 from pathlib import Path
 
 from minigit.errors import MinigitError
@@ -18,11 +19,16 @@ HELP = "Add file contents to the staging area"
 
 
 def configure(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("paths", nargs="+", help="files or directories to stage")
+    parser.add_argument("paths", nargs="*", help="files or directories to stage")
+    parser.add_argument("-v", "--verbose", action="store_true", help="be verbose")
 
 
 def run(args: argparse.Namespace, repo: Repository | None) -> int:
     assert repo is not None
+    if not args.paths:
+        print("Nothing specified, nothing added.", file=sys.stderr)
+        print("hint: Maybe you wanted to say 'git add .'?", file=sys.stderr)
+        return 0
     index = Index.load(repo)
     for raw in args.paths:
         _stage_deletions(index, repo, raw)
@@ -31,6 +37,8 @@ def run(args: argparse.Namespace, repo: Repository | None) -> int:
         for path in _expand(repo, raw):
             sha = write_object(repo, (repo.worktree / path).read_bytes(), "blob")
             index.add(IndexEntry(FILE_MODE, sha, path))
+            if getattr(args, "verbose", False):
+                print(f"add '{path}'")
     index.save(repo)
     return 0
 
